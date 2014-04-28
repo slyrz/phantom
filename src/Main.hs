@@ -26,12 +26,7 @@ generatePasswords prng len (entry:entries) =
 -- Pretty print the (name, password) pairs.
 showPassword :: (String, String) -> IO()
 showPassword (name, password) =
-  let
-    len   = length name
-    width = max 1 (30 - len)
-    delim = replicate width ' '
-  in
-    putStrLn $ " " ++ textColored password ++ " | " ++ textBold name
+  putStrLn $ " " ++ textColored password ++ " | " ++ textBold name
 
 -- Ignore names starting with an underscore.
 ignoreEntry :: String -> Bool
