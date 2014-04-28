@@ -2,6 +2,8 @@
 module Phantom.Random
   (
     State
+  , initRC4
+  , takeRC4
   , initRandom
   , takeRandom
   ) where
@@ -15,10 +17,10 @@ import Phantom.Config (repeats, defaultConfig)
 
 type State = Array Int Word8
 
--- Hash value n times.
-hash :: BS.ByteString -> [Word8]
+-- Repeated hash of value.
+hash :: BS.ByteString -> [[Word8]]
 hash val =
-  BS.unpack (iterate CH.hash val !! repeats defaultConfig)
+  map BS.unpack $ val : iterate CH.hash val
 
 -- Key-Scheduling Algorithm
 --
@@ -62,26 +64,33 @@ take' i j n k s =
       let
         i' = (i + 1) `mod` 256
         j' = (j + fromEnum (s!i')) `mod` 256
-        l' = (s!((fromEnum (s!i') + fromEnum (s!j')) `mod` 256))
+        s' = (s // [ (i', s!j'), (j', s!i') ])
+        l' = (s'!((fromEnum (s'!i') + fromEnum (s'!j')) `mod` 256))
         n' = n - 1
       in
-        take' i' j' n' (k ++ [l']) (s // [ (i', s!j'), (j', s!i') ])
+        take' i' j' n' (k ++ [l']) s'
     else
-      (s, hash $ BS.pack k)
+      (s, k)
+
+initRC4 :: [Word8] -> Array Int Word8
+initRC4 key =
+  let
+    s = listArray (0, 255) [ 0..255 ]
+    k = concat . repeat $ key
+  in
+    init' 0 0 k s
+
+takeRC4 :: State -> Int -> (State, [Word8])
+takeRC4 state n =
+  take' 0 0 n [] state
 
 initRandom :: String -> Array Int Word8
 initRandom key =
-  let
-    i = 0
-    j = 0
-    s = listArray (0, 255) [ 0..255 ]
-    k = concat . repeat . hash $ BC.pack key
-  in
-    init' i j k s
+  initRC4 . (!! repeats defaultConfig) . hash $ BC.pack key
 
 takeRandom :: State -> Int -> (State, [Word8])
-takeRandom s n =
+takeRandom state n =
   let
-    (s', r) = take' 0 0 256 [] s
+    (state', randomWords) = takeRC4 state 128
   in
-    (s', take n r)
+    (state', take n . (!! repeats defaultConfig) . hash $ BS.pack randomWords)
