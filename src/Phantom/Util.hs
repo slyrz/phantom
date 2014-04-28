@@ -1,15 +1,20 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Phantom.Util
   (
-    getPass
+      getPass
+    , textBold
+    , textColored
   ) where
 
 import Foreign.C
 
 foreign import ccall safe getpass :: CString -> IO CString
 
-ansiEscLineUp  = "\x1b[F"
-ansiEscLineClr = "\x1b[K"
+ansiEscLineClr   = "\x1b[K"
+ansiEscLineUp    = "\x1b[F"
+ansiEscTextBold  = "\x1b[1m"
+ansiEscTextColor = "\x1b[33m"
+ansiEscTextNorm  = "\x1b[0m"
 
 clearLastLine :: IO()
 clearLastLine =
@@ -20,3 +25,11 @@ getPass prompt = do
   result <- peekCString =<< getpass =<< newCString prompt
   clearLastLine
   return result
+
+textBold :: String -> String
+textBold text =
+  ansiEscTextBold ++ text ++ ansiEscTextNorm
+
+textColored :: String -> String
+textColored text =
+  ansiEscTextColor ++ text ++ ansiEscTextNorm

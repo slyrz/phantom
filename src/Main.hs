@@ -31,7 +31,7 @@ showPassword (name, password) =
     width = max 1 (30 - len)
     delim = replicate width ' '
   in
-    putStrLn $ name ++ delim ++ password
+    putStrLn $ " " ++ textColored password ++ " | " ++ textBold name
 
 -- Ignore names starting with an underscore.
 ignoreEntry :: String -> Bool
