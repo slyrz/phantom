@@ -7,11 +7,17 @@ module Phantom.Random
   ) where
 import Data.Array (Array, listArray, (!), (//))
 import Data.Word (Word8)
-import qualified Data.ByteString as BS (unpack)
+import qualified Data.ByteString as BS (ByteString, pack, unpack)
 import qualified Data.ByteString.Char8 as BC (pack)
 import qualified Crypto.Hash.Whirlpool as CH (hash)
+import Phantom.Config (repeats, defaultConfig)
 
 type State = Array Int Word8
+
+-- Hash value n times.
+hash :: BS.ByteString -> [Word8]
+hash val =
+  BS.unpack (iterate CH.hash val !! repeats defaultConfig)
 
 -- Key-Scheduling Algorithm
 --
@@ -60,7 +66,7 @@ take' i j n k s =
       in
         take' i' j' n' (k ++ [l']) (s // [ (i', s!j'), (j', s!i') ])
     else
-      (s, k)
+      (s, hash $ BS.pack k)
 
 initRandom :: String -> Array Int Word8
 initRandom key =
@@ -68,10 +74,13 @@ initRandom key =
     i = 0
     j = 0
     s = listArray (0, 255) [ 0..255 ]
-    k = concat . repeat . BS.unpack . CH.hash . BC.pack $ key
+    k = concat . repeat . hash $ BC.pack key
   in
     init' i j k s
 
 takeRandom :: State -> Int -> (State, [Word8])
 takeRandom s n =
-  take' 0 0 n [] s
+  let
+    (s', r) = take' 0 0 256 [] s
+  in
+    (s', take n r)
