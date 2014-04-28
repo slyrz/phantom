@@ -1,9 +1,9 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 module Phantom.Util
   (
-      getPass
-  )
-where
+    getPass
+  ) where
+
 import Foreign.C
 
 foreign import ccall safe getpass :: CString -> IO CString

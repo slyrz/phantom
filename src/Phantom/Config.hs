@@ -1,13 +1,13 @@
 module Phantom.Config
   (
-      Context
-    , alphabet
-    , size
-    , repeats
-    , path
-    , defaultConfig
-  )
-where
+    Context
+  , alphabet
+  , size
+  , repeats
+  , path
+  , defaultConfig
+  ) where
+
 import Control.Applicative ((<$>))
 import System.Directory (getHomeDirectory)
 import System.FilePath ((</>))

@@ -1,4 +1,5 @@
 module Main where
+
 import Control.Applicative ((<$>))
 import Data.List (isPrefixOf)
 import Phantom.Config

@@ -5,6 +5,7 @@ module Phantom.Random
   , initRandom
   , takeRandom
   ) where
+
 import Data.Array (Array, listArray, (!), (//))
 import Data.Word (Word8)
 import qualified Data.ByteString as BS (ByteString, pack, unpack)
