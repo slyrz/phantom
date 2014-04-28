@@ -1,0 +1,10 @@
+*.bkp
+*.log
+*.swp
+*.sh
+*~
+
+*.o
+*.hi
+
+/dist
