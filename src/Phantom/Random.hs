@@ -6,6 +6,7 @@ module Phantom.Random
   , takeRC4
   , initRandom
   , takeRandom
+  , hash
   ) where
 
 import Data.Array (Array, listArray, (!), (//))
@@ -15,12 +16,24 @@ import qualified Data.ByteString.Char8 as BC (pack)
 import qualified Crypto.Hash.Whirlpool as CH (hash)
 import Phantom.Config (repeats, defaultConfig)
 
-type State = Array Int Word8
+-- type State = Array Int Word8
 
--- Repeated hash of value.
+data State = State
+  { s ::  Array Int Word8
+  , i :: !Int
+  , j :: !Int
+  } deriving (Show)
+
+-- Creates an infinite list of hash values, where every item is is calculated
+-- by applying the hash function on the previous item.
 hash :: BS.ByteString -> [[Word8]]
 hash val =
-  map BS.unpack $ val : iterate CH.hash val
+  map BS.unpack $ iterate CH.hash val
+
+-- Swap array elements at index i and j.
+swapIdx :: Array Int a -> Int -> Int -> Array Int a
+swapIdx arr i j =
+  arr // [ (i, arr ! j), (j, arr ! i) ]
 
 -- Key-Scheduling Algorithm
 --
@@ -33,17 +46,18 @@ hash val =
 --       swap values of S[i] and S[j]
 --   endfor
 --
-init' :: Int -> Int -> [Word8] -> State -> State
-init' i j (k:xk) s =
-  if i >= 0 && i <= 255
+init' :: State -> [Word8] -> State
+init' state (k:xk) =
+  if i state >= 0 && i state <= 255
     then
       let
-        i' = (i + 1)
-        j' = (j + fromEnum (s!i) + fromEnum k) `mod` 256
+        i' = (i state + 1)
+        j' = (j state + fromEnum (s state ! i state) + fromEnum k) `mod` 256
+        s' = swapIdx (s state) (i state) j'
       in
-        init' i' j' xk (s // [ (i, s!j'), (j', s!i) ])
+        init' state { s = s', i = i', j = j' } xk
     else
-      s
+      state { i = 0, j = 0 }
 
 -- Pseudo-Random Generation Algorithm
 --
@@ -57,34 +71,30 @@ init' i j (k:xk) s =
 --       output K
 --   endwhile
 --
-take' :: Int -> Int -> Int -> [Word8] -> State -> (State, [Word8])
-take' i j n k s =
-  if n > 0
-    then
-      let
-        i' = (i + 1) `mod` 256
-        j' = (j + fromEnum (s!i')) `mod` 256
-        s' = (s // [ (i', s!j'), (j', s!i') ])
-        l' = (s'!((fromEnum (s'!i') + fromEnum (s'!j')) `mod` 256))
-        n' = n - 1
-      in
-        take' i' j' n' (k ++ [l']) s'
-    else
-      (s, k)
+keyWord :: Array Int Word8 -> Int -> Int -> Word8
+keyWord arr i j =
+  arr ! ((fromEnum (arr ! i) + fromEnum (arr ! j)) `mod` 256)
 
-initRC4 :: [Word8] -> Array Int Word8
-initRC4 key =
+take' :: State -> Int -> [Word8] -> (State, [Word8])
+take' state 0 k = (state, k)
+take' state n k =
   let
-    s = listArray (0, 255) [ 0..255 ]
-    k = concat . repeat $ key
+    i' = (i state + 1) `mod` 256
+    j' = (j state + fromEnum (s state ! i')) `mod` 256
+    s' = swapIdx (s state) i' j'
+    n' = n - 1
   in
-    init' 0 0 k s
+    take' State {s = s', i = i', j = j'} n' (k ++ [keyWord s' i' j'])
+
+initRC4 :: [Word8] -> State
+initRC4 key =
+  init' State {s = listArray (0, 255) [ 0..255 ], i = 0, j = 0} (concat . repeat $ key)
 
 takeRC4 :: State -> Int -> (State, [Word8])
 takeRC4 state n =
-  take' 0 0 n [] state
+  take' state n []
 
-initRandom :: String -> Array Int Word8
+initRandom :: String -> State
 initRandom key =
   initRC4 . (!! repeats defaultConfig) . hash $ BC.pack key
 
