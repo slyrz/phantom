@@ -24,3 +24,15 @@ executable phantom
   build-depends:       base,
                        phantom
   default-language:    Haskell2010
+
+Test-Suite test
+  type:                exitcode-stdio-1.0
+  main-is:             Main.hs
+  hs-source-dirs:      tests
+  build-depends:       base,
+                       bytestring,
+                       phantom,
+                       test-framework,
+                       test-framework-hunit,
+                       HUnit
+  default-language:    Haskell2010
