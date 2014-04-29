@@ -16,8 +16,6 @@ import qualified Data.ByteString.Char8 as BC (pack)
 import qualified Crypto.Hash.Whirlpool as CH (hash)
 import Phantom.Config (repeats, defaultConfig)
 
--- type State = Array Int Word8
-
 data State = State
   { s ::  Array Int Word8
   , i :: !Int
@@ -71,20 +69,23 @@ init' state (k:xk) =
 --       output K
 --   endwhile
 --
-keyWord :: Array Int Word8 -> Int -> Int -> Word8
-keyWord arr i j =
+getKey :: Array Int Word8 -> Int -> Int -> Word8
+getKey arr i j =
   arr ! ((fromEnum (arr ! i) + fromEnum (arr ! j)) `mod` 256)
 
 take' :: State -> Int -> [Word8] -> (State, [Word8])
-take' state 0 k = (state, k)
 take' state n k =
-  let
-    i' = (i state + 1) `mod` 256
-    j' = (j state + fromEnum (s state ! i')) `mod` 256
-    s' = swapIdx (s state) i' j'
-    n' = n - 1
-  in
-    take' State {s = s', i = i', j = j'} n' (k ++ [keyWord s' i' j'])
+  if n > 0
+    then
+      let
+        i' = (i state + 1) `mod` 256
+        j' = (j state + fromEnum (s state ! i')) `mod` 256
+        s' = swapIdx (s state) i' j'
+        n' = n - 1
+      in
+        take' state {s = s', i = i', j = j'} n' (k ++ [getKey s' i' j'])
+    else
+      (state, k)
 
 initRC4 :: [Word8] -> State
 initRC4 key =
