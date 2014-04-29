@@ -3,6 +3,7 @@
 *.swp
 *.sh
 *~
+*.save*
 
 *.o
 *.hi
