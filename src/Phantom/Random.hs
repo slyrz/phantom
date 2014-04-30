@@ -97,7 +97,7 @@ takeRC4 state n =
 
 initRandom :: String -> State
 initRandom key =
-  initRC4 . (!! repeats defaultConfig) . hash $ BC.pack key
+  initRC4 . concat . drop (repeats defaultConfig) . hash $ BC.pack key
 
 takeRandom :: State -> Int -> (State, [Word8])
 takeRandom state n =
