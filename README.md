@@ -11,6 +11,14 @@ Your account names are stored in
 by default. If you want to change the path,
 edit the [Config.hs](./src/Phantom/Config.hs) file.
 
+### Getting Started
+
+To build phantom, run
+
+	cabal configure --enable-tests
+	cabal build
+	cabal test
+
 ### License
 
 Phantom is released under MIT license.
