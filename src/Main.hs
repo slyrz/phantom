@@ -19,9 +19,9 @@ generatePasswords :: State -> Int -> [String] -> [(String, String)]
 generatePasswords _ _ [] = []
 generatePasswords prng len (entry:entries) =
   let
-    (prng', bytes) = takeRandom prng len
+    (prng', sample) = takeRandom prng len
   in
-    (entry, map (toPasswordChar . fromEnum) bytes) : generatePasswords prng' len entries
+    (entry, map (toPasswordChar . fromEnum) sample) : generatePasswords prng' len entries
 
 -- Pretty print the (name, password) pairs.
 showPassword :: (String, String) -> IO()
